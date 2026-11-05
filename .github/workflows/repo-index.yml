@@ -1,0 +1,42 @@
+name: Repository index
+
+# Regenerates profile/README.md (the table shown on the organisation page)
+# every Monday, on demand, and whenever the generator changes.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/repo_index.py
+      - .github/workflows/repo-index.yml
+
+permissions:
+  contents: write
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Generate the index
+        env:
+          # REPO_INDEX_TOKEN: fine-grained token, "Metadata: read" on every
+          # repository of romain-nicod and ai-gmented-pm. Without it the
+          # job falls back to the repository token, which sees public
+          # repositories only and cannot fill the Access column.
+          GH_TOKEN: ${{ secrets.REPO_INDEX_TOKEN || github.token }}
+        run: python3 scripts/repo_index.py --out profile/README.md
+
+      - name: Commit when the index changed
+        run: |
+          if git diff --quiet -- profile/README.md; then
+            echo "index unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Regenerate the repository index" -- profile/README.md
+          git push origin HEAD
