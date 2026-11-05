@@ -39,7 +39,12 @@ class RenderTests(unittest.TestCase):
         text = repo_index.render(FIXTURE, today=TODAY, include_private=True)
         self.assertIn("| A \\| pipe |", text)
         self.assertIn("🌐 [alpha](https://github.com/romain-nicod/alpha) · template | — | romain-nicod | Public | — |", text)
-        self.assertIn("| romain-nicod | Private | Admin |", text)
+        self.assertIn("| romain-nicod | Private | Admin | 2026-11-01 |", text)
+        self.assertIn("| Repository | What it is | Owner | Visibility | Access | Updated |", text)
+
+    def test_missing_push_date_is_a_dash(self):
+        repo = dict(FIXTURE[0], pushedAt=None)
+        self.assertTrue(repo_index.row(repo).endswith("| Admin | — |"))
 
     def test_counts_and_date(self):
         text = repo_index.render(FIXTURE, today=TODAY, include_private=True)

@@ -3,7 +3,7 @@
 
 Reads every repository of the given owners through the GitHub CLI (`gh`),
 renders one Markdown table (one row per repository: name, description, owner,
-visibility, access of the account that generated the index) and writes it to
+visibility, access of the account that generated the index, date of the last push) and writes it to
 the output file. Archived repositories go to a collapsed section at the end.
 
 The output is generated: never edit it by hand, run this script instead.
@@ -85,11 +85,12 @@ def row(repo: dict) -> str:
     owner = repo["nameWithOwner"].split("/")[0]
     visibility = repo["visibility"].capitalize()
     access = ACCESS.get(repo.get("viewerPermission") or "", "—")
-    return f"| {name} | {cell(repo.get('description'))} | {owner} | {visibility} | {access} |"
+    updated = (repo.get("pushedAt") or "")[:10] or "—"
+    return f"| {name} | {cell(repo.get('description'))} | {owner} | {visibility} | {access} | {updated} |"
 
 
 def table(repos: list[dict]) -> str:
-    head = "| Repository | What it is | Owner | Visibility | Access |\n|---|---|---|---|---|"
+    head = "| Repository | What it is | Owner | Visibility | Access | Updated |\n|---|---|---|---|---|---|"
     return "\n".join([head] + [row(r) for r in repos])
 
 
@@ -113,7 +114,8 @@ def render(repos: list[dict], *, today: dt.date, include_private: bool) -> str:
         f"_{scope.capitalize()} behind AI-GMENTED PM, on this organisation and on the personal "
         f"account [romain-nicod](https://github.com/romain-nicod). {counts}. "
         f"Generated on {today.isoformat()} by [`repo_index.py`]({SCRIPT_URL}); "
-        "edits by hand are overwritten. Access is the permission of the account that generated the index._",
+        "edits by hand are overwritten. Access is the permission of the account that generated the index, "
+        "Updated the date of the last push._",
         "",
         table(live),
     ]
